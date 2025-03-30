@@ -283,24 +283,24 @@ func NewPacketReader(conn net.Conn, UDPOverride net.Destination) buf.Reader {
 	if statConn != nil {
 		counter = statConn.ReadCounter
 	}
-	if c, ok := iConn.(*internet.PacketConnWrapper); ok && UDPOverride.Address == nil && UDPOverride.Port == 0 {
+	if c, ok := iConn.(*net.UDPConn); ok && UDPOverride.Address == nil && UDPOverride.Port == 0 {
 		return &PacketReader{
-			PacketConnWrapper: c,
-			Counter:           counter,
+			UDPConn: c,
+			Counter: counter,
 		}
 	}
 	return &buf.PacketReader{Reader: conn}
 }
 
 type PacketReader struct {
-	*internet.PacketConnWrapper
+	*net.UDPConn
 	stats.Counter
 }
 
 func (r *PacketReader) ReadMultiBuffer() (buf.MultiBuffer, error) {
 	b := buf.New()
 	b.Resize(0, buf.Size)
-	n, d, err := r.PacketConnWrapper.ReadFrom(b.Bytes())
+	n, d, err := r.UDPConn.ReadFrom(b.Bytes())
 	if err != nil {
 		b.Release()
 		return nil, err
@@ -327,13 +327,13 @@ func NewPacketWriter(conn net.Conn, h *Handler, ctx context.Context, UDPOverride
 	if statConn != nil {
 		counter = statConn.WriteCounter
 	}
-	if c, ok := iConn.(*internet.PacketConnWrapper); ok {
+	if c, ok := iConn.(*net.UDPConn); ok {
 		return &PacketWriter{
-			PacketConnWrapper: c,
-			Counter:           counter,
-			Handler:           h,
-			Context:           ctx,
-			UDPOverride:       UDPOverride,
+			UDPConn:     c,
+			Counter:     counter,
+			Handler:     h,
+			Context:     ctx,
+			UDPOverride: UDPOverride,
 		}
 
 	}
@@ -341,7 +341,7 @@ func NewPacketWriter(conn net.Conn, h *Handler, ctx context.Context, UDPOverride
 }
 
 type PacketWriter struct {
-	*internet.PacketConnWrapper
+	*net.UDPConn
 	stats.Counter
 	*Handler
 	context.Context
@@ -375,9 +375,9 @@ func (w *PacketWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 				b.Release()
 				continue
 			}
-			n, err = w.PacketConnWrapper.WriteTo(b.Bytes(), destAddr)
+			n, err = w.UDPConn.WriteTo(b.Bytes(), destAddr)
 		} else {
-			n, err = w.PacketConnWrapper.Write(b.Bytes())
+			n, err = w.UDPConn.Write(b.Bytes())
 		}
 		b.Release()
 		if err != nil {

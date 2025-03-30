@@ -171,16 +171,6 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
 				var udpAddr *net.UDPAddr
 
 				switch c := conn.(type) {
-				case *internet.PacketConnWrapper:
-					var ok bool
-					udpConn, ok = c.Conn.(*net.UDPConn)
-					if !ok {
-						return nil, errors.New("PacketConnWrapper does not contain a UDP connection")
-					}
-					udpAddr, err = net.ResolveUDPAddr("udp", c.Dest.String())
-					if err != nil {
-						return nil, err
-					}
 				case *net.UDPConn:
 					udpConn = c
 					udpAddr, err = net.ResolveUDPAddr("udp", c.RemoteAddr().String())
